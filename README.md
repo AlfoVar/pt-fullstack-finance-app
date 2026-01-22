@@ -1,40 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# PT Fullstack Finance App
 
-## Getting Started
+Aplicación Next.js para registrar movimientos (ingresos/egresos), gestionar usuarios y generar reportes. Incluye UI moderna, API REST y documentación OpenAPI (Swagger).
 
-First, run the development server:
+## Páginas principales
+- `/` — Inicio / dashboard.
+- `/movements` — Lista de movimientos.
+- `/movements/new` — Crear movimiento (admin).
+- `/movements/[id]` — Ver / editar movimiento.
+- `/users` — Gestión de usuarios (admin).
+- `/users/new` — Crear usuario (admin).
+- `/reports` — Reportes y gráfico.
+- `/docs` — Documentación interactiva (Swagger UI).
 
+## API y OpenAPI
+- API routes en `src/pages/api/*`.
+- OpenAPI spec: `src/lib/openapiSpec.ts`.
+- Swagger UI page: `/docs` (usa `swagger-ui-react` y carga `openapiSpec`).
+- Raw spec (si está configurado): `/api/openapi.json` o `/api/docs` según tu ruta API.
+
+## Requisitos
+- Node.js 18+ recomendado
+- Base de datos (DATABASE_URL) configurada en .env
+- NEXTAUTH_URL configurada para NextAuth
+
+## Instalación y uso
+1. Instalar dependencias:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Generar cliente Prisma (si usas Prisma):
+```bash
+npx prisma generate
+```
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+3. Ejecutar migraciones de Prisma (si aplica):
+```bash
+npx prisma migrate dev
+```
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+4. Ejecutar en desarrollo:
+```bash
+npm run dev
+# abrir http://localhost:3000
+# docs: http://localhost:3000/docs
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+5. Build / producción:
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tests
+- Los tests están en `src/__tests__` o `src/tests`.
+- Ejecutar:
+```bash
+npm test
+```
 
-## Learn More
+## Configuración de imágenes (next/image)
+Si usas avatars remotos (GitHub u otros) añade dominios en `next.config.js`:
+```js
+// next.config.js
+module.exports = {
+  images: {
+    domains: ["avatars.githubusercontent.com"],
+    // o usar remotePatterns
+  },
+};
+```
+Reinicia el servidor tras cambios.
 
-To learn more about Next.js, take a look at the following resources:
+## Notas útiles
+- El spec OpenAPI se encuentra en `src/lib/openapiSpec.ts`.
+- La página `/docs` carga `swagger-ui-react` de forma dinámica (ssr: false).
+- Asegúrate de reiniciar el dev server tras cambios en `next.config.js` o variables de entorno.
+- Para evitar llamadas reales en tests, mockea `src/lib/prisma`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+## Despliegue
+Se recomienda Vercel para desplegar Next.js. Asegura configurar variables de entorno (DATABASE_URL, NEXTAUTH_URL, etc.) en la plataforma de despliegue.

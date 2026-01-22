@@ -13,18 +13,31 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, session?: any)
       return res.status(200).json(movements);
     }
 
-    if (req.method === "POST") {
+     if (req.method === "POST") {
       const { amount, concept, date, type, userId } = req.body;
-      if (!amount || !concept || !date || !type || !userId) {
+      const targetUserId = userId ?? (session?.user?.id ?? null);
+      if (!amount || !concept || !date || !type || !targetUserId) {
         return res.status(400).json({ error: "Missing fields" });
+      }
+      if (!["INCOME", "EXPENSE"].includes(type)) {
+        return res.status(400).json({ error: "Invalid type" });
+      }
+      const parsedDate = new Date(date);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date" });
+      }
+      // verify user exists before connecting
+      const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+      if (!user) {
+        return res.status(400).json({ error: "User not found" });
       }
       const movement = await prisma.movement.create({
         data: {
-          amount: typeof amount === "string" || typeof amount === "number" ? amount : String(amount),
+          amount: PrismaDecimal(amount),
           concept,
-          date: new Date(date),
+          date: parsedDate,
           type,
-          user: { connect: { id: userId } },
+          user: { connect: { id: targetUserId } },
         },
       });
       return res.status(201).json(movement);
@@ -50,3 +63,5 @@ export default function wrapped(req: NextApiRequest, res: NextApiResponse) {
 function PrismaDecimal(v: unknown) {
   return typeof v === "string" || typeof v === "number" ? v : String(v);
 }
+
+export { handler, PrismaDecimal };

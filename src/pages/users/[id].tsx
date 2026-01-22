@@ -1,56 +1,96 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import type { GetServerSideProps } from "next";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]";
 
-type User = { id: string; name: string; email: string; phone?: string; role?: string };
-
 type Props = { role: string | null };
 
-export default function EditUser() {
+export default function NewUserPage(_props: Props) {
   const router = useRouter();
-  const { id } = router.query;
-  const [data, setData] = useState<Partial<User>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    fetch(`/api/users/${id}`).then((r) => r.json()).then((u) => setData(u)).catch(console.error).finally(() => setLoading(false));
-  }, [id]);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<"ADMIN" | "USER">("USER");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    await fetch(`/api/users/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: data.name, role: data.role }),
-    });
-    router.push("/users");
+    setError(null);
+    if (!name.trim() || !email.trim()) {
+      setError("Nombre y correo son obligatorios");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), phone: phone.trim() || null, role }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.error ?? "Error creando usuario");
+      }
+      router.push("/users");
+    } catch (err: any) {
+      setError(err.message ?? "Error");
+      setLoading(false);
+    }
   }
 
-  if (loading) return <p className="p-6">Loading...</p>;
-
   return (
-    <div className="p-6 max-w-lg">
-      <h1 className="text-xl mb-4">Editar Usuario</h1>
-      <form onSubmit={submit} className="space-y-3">
-        <div>
-          <label className="block text-sm">Nombre</label>
-          <input className="w-full border px-2 py-1" value={data.name ?? ""} onChange={(e) => setData((d) => ({ ...d, name: e.target.value }))} />
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <header className="max-w-4xl mx-auto px-6 py-6">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-lg font-semibold">PT Finance App</Link>
+          <Link href="/users" className="text-sm px-3 py-2 border rounded">Volver a usuarios</Link>
         </div>
-        <div>
-          <label className="block text-sm">Rol</label>
-          <select className="w-full border px-2 py-1" value={data.role ?? "ADMIN"} onChange={(e) => setData((d) => ({ ...d, role: e.target.value }))}>
-            <option value="ADMIN">ADMIN</option>
-            <option value="USER">USER</option>
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
-          <button type="button" onClick={() => router.push("/users")} className="px-4 py-2 border rounded">Cancelar</button>
-        </div>
-      </form>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-6 pb-12">
+        <section className="bg-white dark:bg-zinc-900 rounded-lg p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold mb-4">Crear Usuario</h1>
+
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1">Nombre</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border px-3 py-2" required />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Correo</label>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="w-full border px-3 py-2" required />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Teléfono</label>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border px-3 py-2" />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Rol</label>
+              <select value={role} onChange={(e) => setRole(e.target.value as any)} className="w-full border px-3 py-2">
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+
+            {error && <div className="text-red-600 text-sm">{error}</div>}
+
+            <div className="flex gap-2">
+              <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">
+                {loading ? "Guardando..." : "Crear"}
+              </button>
+              <button type="button" onClick={() => router.push("/users")} className="px-4 py-2 border rounded">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </section>
+      </main>
     </div>
   );
 }
