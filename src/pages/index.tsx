@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { signIn, signOut } from "next-auth/react";
 import { authOptions } from "./api/auth/[...nextauth]";
 import { Geist, Geist_Mono } from "next/font/google";
+import type { Session } from "next-auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -116,13 +117,18 @@ export default function Home({ role, user }: Props) {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ req, res }) => {
-  const session = await getServerSession(req, res, authOptions);
+  const session = (await getServerSession(req, res, authOptions as any)) as Session | null;
   const user = session?.user
-    ? { id: session.user.id, name: session.user.name ?? null, email: session.user.email ?? null, image: session.user.image ?? null }
+    ? {
+        id: (session.user as any).id,
+        name: session.user.name ?? null,
+        email: session.user.email ?? null,
+        image: (session.user as any).image ?? null,
+      }
     : null;
   return {
     props: {
-      role: session?.user?.role ?? null,
+      role: (session?.user as any)?.role ?? null,
       user,
     },
   };

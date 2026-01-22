@@ -1,6 +1,6 @@
 // import { PrismaClient } from "../generated/prisma";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../generated/prisma";
 import { PrismaPg } from '@prisma/adapter-pg';
 
 declare global {
@@ -20,3 +20,4 @@ const prisma = global.prisma ?? new PrismaClient({adapter});
 if (process.env.NODE_ENV !== "production") global.prisma = prisma;
 
 export default prisma;
+
