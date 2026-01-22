@@ -6,6 +6,7 @@ import type { GetServerSideProps } from "next";
 import { getServerSession } from "next-auth/next";
 import { signOut } from "next-auth/react";
 import { authOptions } from "../api/auth/[...nextauth]";
+import type { Session } from "next-auth";
 
 type User = { id: string; name: string; email: string; phone?: string | null; role: string; createdAt: string };
 type UserInfo = { id: string; name?: string | null; email?: string | null; image?: string | null };
@@ -158,10 +159,17 @@ export default function UsersPage({ role, user }: Props) {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ req, res }) => {
-    const session = await getServerSession(req, res, authOptions);
-    if (!session) return { redirect: { destination: "/api/auth/signin", permanent: false } };
-    const role = session.user?.role ?? null;
-    if (role !== "ADMIN") return { redirect: { destination: "/", permanent: false } };
-    const user = session.user ? { id: session.user.id, name: session.user.name ?? null, email: session.user.email ?? null, image: session.user.image ?? null } : null;
-    return { props: { role, user } };
+  const session = (await getServerSession(req, res, authOptions as any)) as Session | null;
+  if (!session) return { redirect: { destination: "/api/auth/signin", permanent: false } };
+  const role = (session.user as any)?.role ?? null;
+  if (role !== "ADMIN") return { redirect: { destination: "/", permanent: false } };
+  const user = session.user
+    ? {
+        id: (session.user as any).id,
+        name: (session.user as any).name ?? null,
+        email: (session.user as any).email ?? null,
+        image: (session.user as any).image ?? null,
+      }
+    : null;
+  return { props: { role, user } };
 };
